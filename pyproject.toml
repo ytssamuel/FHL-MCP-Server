@@ -33,6 +33,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "uvicorn>=0.30.0",
     "starlette>=0.38.0",
+    "smithery>=0.2.0",
 ]
 
 [project.optional-dependencies]

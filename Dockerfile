@@ -26,9 +26,10 @@ COPY src/ ./src/
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
 
-# Default PORT (Render uses dynamic PORT via environment variable)
-ENV PORT=8000
-EXPOSE 8000
+# Smithery uses PORT 8081
+ENV PORT=8081
+EXPOSE 8081
 
 # Run the MCP server in HTTP mode
 CMD ["python", "-m", "fhl_bible_mcp.http_server"]
+
