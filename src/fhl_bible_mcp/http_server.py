@@ -68,6 +68,7 @@ from fhl_bible_mcp.tools.articles import (
     handle_search_articles,
     handle_list_article_columns,
 )
+from mcp.server.transport_security import TransportSecuritySettings
 
 # Configure logging
 logging.basicConfig(
@@ -76,8 +77,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastMCP server
-mcp = FastMCP(name="FHL Bible MCP Server")
+# Initialize FastMCP server with transport security configured for external hosting
+# This allows requests from Render.com and other external hosts
+mcp = FastMCP(
+    name="FHL Bible MCP Server",
+    transport_security=TransportSecuritySettings(
+        # Disable DNS rebinding protection for cloud deployment
+        # This is safe because we're behind Render's proxy/load balancer
+        enable_dns_rebinding_protection=False,
+    )
+)
 
 
 # ============================================================================
