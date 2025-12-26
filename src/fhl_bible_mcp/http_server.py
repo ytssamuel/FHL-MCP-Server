@@ -640,8 +640,30 @@ async def list_fhl_article_columns(
 # ============================================================================
 
 # Well-known endpoints for Smithery discovery
+MCP_SERVER_CARD = {
+    "name": "FHL Bible MCP Server",
+    "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。支援和合本、現代中文譯本等多種版本。",
+    "version": "0.1.2",
+    "author": "Ytssamuel",
+    "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
+    "capabilities": {
+        "tools": True,
+        "resources": False,
+        "prompts": True,
+    },
+    "endpoints": [
+        {
+            "protocol": "http",
+            "transport": "streamable",
+            "path": "/mcp",
+        }
+    ],
+    "tools_count": 24,
+}
+
+
 async def well_known_mcp_config(request):
-    """MCP configuration discovery endpoint for Smithery"""
+    """MCP configuration discovery endpoint for Smithery."""
     return JSONResponse({
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "MCP Session Configuration",
@@ -649,25 +671,18 @@ async def well_known_mcp_config(request):
         "x-query-style": "dot+bracket",
         "type": "object",
         "properties": {},
-        "required": []
+        "required": [],
     })
 
 
 async def well_known_mcp_json(request):
-    """MCP Server Card endpoint for Smithery discovery"""
-    return JSONResponse({
-        "name": "FHL Bible MCP Server",
-        "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。支援和合本、現代中文譯本等多種版本。",
-        "version": "0.1.2",
-        "author": "Ytssamuel",
-        "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
-        "capabilities": {
-            "tools": True,
-            "resources": False,
-            "prompts": True
-        },
-        "tools_count": 24
-    })
+    """MCP Server Card endpoint for Smithery discovery."""
+    return JSONResponse(MCP_SERVER_CARD)
+
+
+async def well_known_mcp(request):
+    """Alias for server card for clients requesting /.well-known/mcp."""
+    return JSONResponse(MCP_SERVER_CARD)
 
 
 def main():
@@ -680,7 +695,8 @@ def main():
         # Get the streamable HTTP app from FastMCP
         app = mcp.streamable_http_app()
         
-        # Add well-known routes for Smithery discovery
+        # Add well-known routes for Smithery discovery (include alias without .json)
+        app.routes.insert(0, Route("/.well-known/mcp", well_known_mcp, methods=["GET"]))
         app.routes.insert(0, Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]))
         app.routes.insert(0, Route("/.well-known/mcp.json", well_known_mcp_json, methods=["GET"]))
         
