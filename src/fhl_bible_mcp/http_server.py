@@ -14,6 +14,8 @@ import json
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 # Import all tool functions
 from fhl_bible_mcp.tools.verse import (
@@ -713,6 +715,47 @@ async def list_fhl_article_columns_tool() -> str:
 
 
 # ============================================================================
+# Well-Known Endpoints for Smithery Discovery
+# ============================================================================
+
+# MCP Server Card - provides server metadata for Smithery discovery
+MCP_SERVER_CARD = {
+    "name": "FHL Bible MCP Server",
+    "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。",
+    "version": "0.1.2",
+    "vendor": "Ytssamuel",
+    "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
+}
+
+# MCP Config Schema - defines session configuration options
+MCP_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MCP Session Configuration",
+    "description": "Schema for the /mcp endpoint configuration",
+    "x-query-style": "dot+bracket",
+    "type": "object",
+    "required": [],
+    "properties": {
+        "use_simplified": {
+            "type": "boolean",
+            "default": False,
+            "description": "Whether to use Simplified Chinese for responses"
+        }
+    }
+}
+
+
+async def well_known_mcp_json(request):
+    """MCP Server Card endpoint for Smithery discovery."""
+    return JSONResponse(MCP_SERVER_CARD)
+
+
+async def well_known_mcp_config(request):
+    """MCP configuration schema endpoint for Smithery."""
+    return JSONResponse(MCP_CONFIG_SCHEMA)
+
+
+# ============================================================================
 # Main Entry Point
 # ============================================================================
 
@@ -724,6 +767,11 @@ def create_http_app():
     # Get the streamable HTTP app from FastMCP
     # The /mcp endpoint is automatically provided by FastMCP
     app = mcp.streamable_http_app()
+    
+    # Add well-known routes for Smithery discovery
+    # These must be added before middleware wrapping
+    app.routes.insert(0, Route("/.well-known/mcp.json", well_known_mcp_json, methods=["GET"]))
+    app.routes.insert(0, Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]))
     
     # Add CORS middleware for browser-based clients
     # IMPORTANT: CORS must be added before other middleware
