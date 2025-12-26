@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy project files
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
+COPY main.py ./
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
@@ -30,6 +31,5 @@ RUN pip install --no-cache-dir -e .
 ENV PORT=8081
 EXPOSE 8081
 
-# Run the MCP server in HTTP mode
-CMD ["python", "-m", "fhl_bible_mcp.http_server"]
-
+# Run the MCP server in HTTP mode (matching Smithery's expected pattern)
+CMD ["python", "main.py"]
