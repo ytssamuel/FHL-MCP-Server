@@ -1,0 +1,19 @@
+# Smithery.ai Configuration for FHL Bible MCP Server
+# https://smithery.ai/docs/build/project-config/smithery-yaml
+
+runtime: "container"
+
+startCommand:
+  type: "http"
+  configSchema:
+    type: "object"
+    properties: {}
+    required: []
+  exampleConfig: {}
+
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
+
+env:
+  PYTHONUNBUFFERED: "1"

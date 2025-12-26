@@ -7,7 +7,7 @@ name = "fhl-bible-mcp"
 version = "0.1.2"
 description = "A Model Context Protocol server for Faith, Hope, Love (FHL) Bible API"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Ytssamuel", email = "samuel3484181@gmail.com"}
 ]
 readme = "README.md"
 license = {text = "MIT"}
@@ -31,6 +31,8 @@ dependencies = [
     "httpx>=0.27.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
+    "uvicorn>=0.30.0",
+    "starlette>=0.38.0",
 ]
 
 [project.optional-dependencies]
@@ -44,10 +46,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/fhl-bible-mcp"
-Documentation = "https://github.com/yourusername/fhl-bible-mcp/blob/main/README.md"
-Repository = "https://github.com/yourusername/fhl-bible-mcp"
-Issues = "https://github.com/yourusername/fhl-bible-mcp/issues"
+Homepage = "https://github.com/ytssamuel/FHL_MCP_SERVER"
+Documentation = "https://github.com/ytssamuel/FHL_MCP_SERVER/blob/main/README.md"
+Repository = "https://github.com/ytssamuel/FHL_MCP_SERVER"
+Issues = "https://github.com/ytssamuel/FHL_MCP_SERVER/issues"
 
 [project.scripts]
 fhl-bible-mcp = "fhl_bible_mcp.server:main"
