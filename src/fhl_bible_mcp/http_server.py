@@ -10,9 +10,12 @@ https://smithery.ai/docs/migrations/python-custom-container
 
 import os
 import logging
+import json
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 # Import all tool functions
 from fhl_bible_mcp.tools.verse import (
@@ -636,6 +639,37 @@ async def list_fhl_article_columns(
 # Main Entry Point
 # ============================================================================
 
+# Well-known endpoints for Smithery discovery
+async def well_known_mcp_config(request):
+    """MCP configuration discovery endpoint for Smithery"""
+    return JSONResponse({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "MCP Session Configuration",
+        "description": "Schema for the /mcp endpoint configuration",
+        "x-query-style": "dot+bracket",
+        "type": "object",
+        "properties": {},
+        "required": []
+    })
+
+
+async def well_known_mcp_json(request):
+    """MCP Server Card endpoint for Smithery discovery"""
+    return JSONResponse({
+        "name": "FHL Bible MCP Server",
+        "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。支援和合本、現代中文譯本等多種版本。",
+        "version": "0.1.2",
+        "author": "Ytssamuel",
+        "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
+        "capabilities": {
+            "tools": True,
+            "resources": False,
+            "prompts": True
+        },
+        "tools_count": 24
+    })
+
+
 def main():
     """Main entry point for HTTP server"""
     transport_mode = os.getenv("TRANSPORT", "http")
@@ -645,6 +679,10 @@ def main():
         
         # Get the streamable HTTP app from FastMCP
         app = mcp.streamable_http_app()
+        
+        # Add well-known routes for Smithery discovery
+        app.routes.insert(0, Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]))
+        app.routes.insert(0, Route("/.well-known/mcp.json", well_known_mcp_json, methods=["GET"]))
         
         # Add CORS middleware for browser-based clients
         app.add_middleware(
@@ -661,6 +699,7 @@ def main():
         port = int(os.environ.get("PORT", 8000))
         logger.info(f"Listening on port {port}")
         logger.info(f"MCP endpoint: /mcp")
+        logger.info(f"Well-known endpoints: /.well-known/mcp-config, /.well-known/mcp.json")
         logger.info(f"Tools registered: 24")
         
         uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
