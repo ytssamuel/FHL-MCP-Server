@@ -1,5 +1,5 @@
 # FHL Bible MCP Server - Dockerfile for Smithery.ai
-# https://smithery.ai/docs/build/project-config/dockerfile
+# https://smithery.ai/docs/build/deployments/custom-container
 
 FROM python:3.11-slim
 
@@ -10,7 +10,8 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    TRANSPORT=http
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,12 +26,9 @@ COPY src/ ./src/
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
 
-# Expose HTTP port (Smithery uses this)
-EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# Smithery sets PORT to 8081
+ENV PORT=8081
+EXPOSE 8081
 
 # Run the MCP server in HTTP mode
 CMD ["python", "-m", "fhl_bible_mcp.http_server"]
