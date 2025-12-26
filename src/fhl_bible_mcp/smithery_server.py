@@ -88,7 +88,10 @@ def create_server():
     This function is called by Smithery to create the server.
     """
     
-    server = FastMCP(name="FHL Bible MCP Server")
+    server = FastMCP(
+        name="FHL Bible MCP Server",
+        instructions="信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。"
+    )
     
     # ========================================================================
     # Verse Query Tools

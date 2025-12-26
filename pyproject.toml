@@ -60,6 +60,8 @@ playground = "smithery.cli.playground:main"
 # Smithery configuration - points to the server creation function
 [tool.smithery]
 server = "fhl_bible_mcp.smithery_server:create_server"
+name = "FHL Bible MCP Server"
+description = "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
