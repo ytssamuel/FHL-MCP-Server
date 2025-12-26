@@ -728,6 +728,46 @@ async def mcp_get_endpoint(request: Request) -> Response:
     )
 
 
+async def well_known_mcp_config(request: Request) -> JSONResponse:
+    """
+    MCP configuration discovery endpoint
+    https://spec.modelcontextprotocol.io/specification/2025-03-26/basic/transports/#discovery
+    """
+    return JSONResponse({
+        "mcpServers": {
+            "fhl-bible": {
+                "url": "/mcp",
+                "name": "FHL Bible MCP Server",
+                "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋等功能",
+                "version": "0.1.2",
+                "transport": {
+                    "type": "http",
+                    "url": "/mcp"
+                }
+            }
+        }
+    })
+
+
+async def mcp_server_card(request: Request) -> JSONResponse:
+    """
+    MCP Server Card endpoint for Smithery discovery
+    """
+    return JSONResponse({
+        "name": "FHL Bible MCP Server",
+        "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。支援和合本、現代中文譯本等多種版本。",
+        "version": "0.1.2",
+        "author": "Ytssamuel",
+        "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
+        "capabilities": {
+            "tools": True,
+            "resources": False,
+            "prompts": True
+        },
+        "tools_count": 24
+    })
+
+
 # Create Starlette app
 app = Starlette(
     debug=False,
@@ -735,6 +775,8 @@ app = Starlette(
         Route("/health", health_check, methods=["GET"]),
         Route("/mcp", mcp_post_endpoint, methods=["POST"]),
         Route("/mcp", mcp_get_endpoint, methods=["GET"]),
+        Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]),
+        Route("/.well-known/mcp.json", mcp_server_card, methods=["GET"]),
         Route("/", health_check, methods=["GET"]),
     ]
 )
