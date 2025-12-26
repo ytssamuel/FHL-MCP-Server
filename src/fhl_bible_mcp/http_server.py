@@ -14,8 +14,6 @@ import json
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
-from starlette.routing import Route
 
 # Import all tool functions
 from fhl_bible_mcp.tools.verse import (
@@ -85,7 +83,8 @@ mcp = FastMCP(name="FHL Bible MCP Server")
 class SmitheryConfigMiddleware:
     """
     Middleware for extracting Smithery session configuration from URL parameters.
-    Uses the Smithery SDK's dot+bracket notation parser.
+    Parses JSON dot-notation query parameters (e.g., use_simplified=true).
+    Based on official Smithery cookbook example.
     """
     
     def __init__(self, app):
@@ -93,26 +92,29 @@ class SmitheryConfigMiddleware:
     
     async def __call__(self, scope, receive, send):
         if scope.get('type') == 'http':
+            from urllib.parse import parse_qs
             try:
-                # Try to use smithery SDK for config parsing
-                from smithery.utils.config import parse_config_from_asgi_scope
-                scope['smithery_config'] = parse_config_from_asgi_scope(scope)
-            except ImportError:
-                # Fallback: simple query parameter parsing
-                scope['smithery_config'] = self._parse_query_params(scope)
+                query_string = scope.get('query_string', b'').decode('utf-8')
+                params = parse_qs(query_string)
+                
+                # Convert single-value lists to values and parse booleans
+                config = {}
+                for k, v in params.items():
+                    value = v[0] if len(v) == 1 else v
+                    # Parse boolean strings
+                    if isinstance(value, str):
+                        if value.lower() == 'true':
+                            value = True
+                        elif value.lower() == 'false':
+                            value = False
+                    config[k] = value
+                
+                scope['smithery_config'] = config
             except Exception as e:
                 logger.warning(f"SmitheryConfigMiddleware: Error parsing config: {e}")
                 scope['smithery_config'] = {}
         
         await self.app(scope, receive, send)
-    
-    def _parse_query_params(self, scope) -> dict:
-        """Fallback query parameter parser."""
-        from urllib.parse import parse_qs
-        query_string = scope.get('query_string', b'').decode('utf-8')
-        params = parse_qs(query_string)
-        # Convert single-value lists to values
-        return {k: v[0] if len(v) == 1 else v for k, v in params.items()}
 
 
 # ============================================================================
@@ -715,47 +717,6 @@ async def list_fhl_article_columns_tool() -> str:
 
 
 # ============================================================================
-# Well-Known Endpoints for Smithery Discovery
-# ============================================================================
-
-# MCP Server Card - provides server metadata for Smithery discovery
-MCP_SERVER_CARD = {
-    "name": "FHL Bible MCP Server",
-    "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、原文分析、註釋、有聲聖經等功能。",
-    "version": "0.1.2",
-    "vendor": "Ytssamuel",
-    "homepage": "https://github.com/ytssamuel/FHL_MCP_SERVER",
-}
-
-# MCP Config Schema - defines session configuration options
-MCP_CONFIG_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "MCP Session Configuration",
-    "description": "Schema for the /mcp endpoint configuration",
-    "x-query-style": "dot+bracket",
-    "type": "object",
-    "required": [],
-    "properties": {
-        "use_simplified": {
-            "type": "boolean",
-            "default": False,
-            "description": "Whether to use Simplified Chinese for responses"
-        }
-    }
-}
-
-
-async def well_known_mcp_json(request):
-    """MCP Server Card endpoint for Smithery discovery."""
-    return JSONResponse(MCP_SERVER_CARD)
-
-
-async def well_known_mcp_config(request):
-    """MCP configuration schema endpoint for Smithery."""
-    return JSONResponse(MCP_CONFIG_SCHEMA)
-
-
-# ============================================================================
 # Main Entry Point
 # ============================================================================
 
@@ -763,18 +724,14 @@ def create_http_app():
     """
     Create and configure the Starlette app for HTTP deployment.
     Returns the app wrapped with all necessary middleware.
+    Based on official Smithery cookbook Python example.
     """
     # Get the streamable HTTP app from FastMCP
     # The /mcp endpoint is automatically provided by FastMCP
     app = mcp.streamable_http_app()
     
-    # Add well-known routes for Smithery discovery
-    # These must be added before middleware wrapping
-    app.routes.insert(0, Route("/.well-known/mcp.json", well_known_mcp_json, methods=["GET"]))
-    app.routes.insert(0, Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]))
-    
     # Add CORS middleware for browser-based clients
-    # IMPORTANT: CORS must be added before other middleware
+    # IMPORTANT: CORS must be configured before other middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
