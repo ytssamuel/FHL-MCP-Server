@@ -1,0 +1,20 @@
+# Render Blueprint for FHL Bible MCP Server
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: fhl-bible-mcp
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    repo: https://github.com/Ytssamuel/FHL_MCP_SERVER
+    branch: main
+    plan: free
+    healthCheckPath: /mcp
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: TRANSPORT
+        value: http
+      - key: PYTHONUNBUFFERED
+        value: 1
