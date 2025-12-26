@@ -1,26 +1,5 @@
 # Smithery.ai Configuration for FHL Bible MCP Server
-# https://smithery.ai/docs/build/project-config/smithery-yaml
+# Using Python runtime mode (automatic containerization by Smithery)
+# https://smithery.ai/docs/build/deployments/python
 
-runtime: "container"
-
-startCommand:
-  type: "http"
-  configSchema:
-    type: "object"
-    properties:
-      use_simplified:
-        type: "boolean"
-        title: "Use Simplified Chinese"
-        description: "Whether to use Simplified Chinese for responses"
-        default: false
-    required: []
-  exampleConfig:
-    use_simplified: false
-
-build:
-  dockerfile: "Dockerfile"
-  dockerBuildPath: "."
-
-env:
-  PYTHONUNBUFFERED: "1"
-  TRANSPORT: "http"
+runtime: "python"

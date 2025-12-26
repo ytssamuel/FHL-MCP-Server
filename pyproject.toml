@@ -27,7 +27,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp[cli]>=1.0.0",
+    "mcp[cli]>=1.15.0",
+    "smithery>=0.4.2",
     "httpx>=0.27.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
@@ -53,6 +54,12 @@ Issues = "https://github.com/ytssamuel/FHL_MCP_SERVER/issues"
 
 [project.scripts]
 fhl-bible-mcp = "fhl_bible_mcp.server:main"
+dev = "smithery.cli.dev:main"
+playground = "smithery.cli.playground:main"
+
+# Smithery configuration - points to the server creation function
+[tool.smithery]
+server = "fhl_bible_mcp.smithery_server:create_server"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
