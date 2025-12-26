@@ -11,9 +11,13 @@ https://smithery.ai/docs/migrations/python-custom-container
 import os
 import logging
 import json
+import base64
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from starlette.applications import Starlette
+from starlette.routing import Route, Mount
+from starlette.responses import JSONResponse, Response
 
 # Import all tool functions
 from fhl_bible_mcp.tools.verse import (
@@ -74,6 +78,62 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastMCP server
 mcp = FastMCP(name="FHL Bible MCP Server")
+
+
+# ============================================================================
+# Well-Known Endpoints for Smithery
+# ============================================================================
+
+# Server Card for Smithery discovery
+SERVER_CARD = {
+    "schema_version": "1.0",
+    "server_info": {
+        "name": "FHL Bible MCP Server",
+        "description": "信望愛聖經工具 MCP 伺服器 - 提供聖經查詢、經文分析、原文研究、註釋等工具",
+        "version": "0.5.2"
+    },
+    "capabilities": {
+        "tools": True,
+        "resources": False,
+        "prompts": False
+    }
+}
+
+# MCP Config for Smithery
+MCP_CONFIG = {
+    "schema_version": "1.0",
+    "config_schema": {
+        "type": "object",
+        "properties": {
+            "use_simplified": {
+                "type": "boolean",
+                "title": "使用簡體中文",
+                "description": "是否使用簡體中文輸出（預設：繁體中文）",
+                "default": False
+            }
+        },
+        "required": []
+    },
+    "transport": {
+        "type": "streamable-http",
+        "path": "/"
+    }
+}
+
+
+async def well_known_mcp_config(request):
+    """Handle /.well-known/mcp-config endpoint for Smithery."""
+    return JSONResponse(MCP_CONFIG)
+
+
+async def well_known_server_card(request):
+    """Handle /.well-known/mcp/server-card.json endpoint for Smithery."""
+    return JSONResponse(SERVER_CARD)
+
+
+async def health_check(request):
+    """Health check endpoint."""
+    return JSONResponse({"status": "ok", "server": "FHL Bible MCP Server"})
 
 
 # ============================================================================
@@ -720,15 +780,73 @@ async def list_fhl_article_columns_tool() -> str:
 # Main Entry Point
 # ============================================================================
 
+class RootToMcpMiddleware:
+    """
+    Middleware to rewrite root path requests to /mcp for FastMCP.
+    Smithery External MCP sends requests to "/" but FastMCP expects "/mcp".
+    """
+    
+    def __init__(self, app):
+        self.app = app
+    
+    async def __call__(self, scope, receive, send):
+        if scope.get('type') == 'http':
+            path = scope.get('path', '')
+            # Rewrite root path to /mcp for MCP protocol requests
+            # Keep well-known paths unchanged
+            if path == '/' or (path.startswith('/?') or '?' in path.split('/')[-1] if '?' in path else path == '/'):
+                # Check if this looks like an MCP request (POST or GET with query params)
+                method = scope.get('method', 'GET')
+                if method == 'POST' or (method == 'GET' and scope.get('query_string')):
+                    # Rewrite to /mcp
+                    scope = dict(scope)
+                    scope['path'] = '/mcp'
+        
+        await self.app(scope, receive, send)
+
+
 def create_http_app():
     """
     Create and configure the Starlette app for HTTP deployment.
     Returns the app wrapped with all necessary middleware.
-    Based on official Smithery cookbook Python example.
+    
+    Key changes for Smithery External MCP:
+    - MCP endpoint is rewritten from "/" to "/mcp" via middleware
+    - Added /.well-known/mcp-config endpoint
+    - Added /.well-known/mcp/server-card.json endpoint
+    - Properly propagates FastMCP lifespan for session manager initialization
     """
-    # Get the streamable HTTP app from FastMCP
-    # The /mcp endpoint is automatically provided by FastMCP
-    app = mcp.streamable_http_app()
+    from contextlib import asynccontextmanager
+    
+    # Get the streamable HTTP app from FastMCP (uses /mcp path)
+    # This includes the lifespan handler that initializes the session manager
+    mcp_app = mcp.streamable_http_app()
+    
+    # Extract the lifespan from FastMCP's app - this is CRITICAL for session management
+    mcp_lifespan = mcp_app.lifespan_context if hasattr(mcp_app, 'lifespan_context') else None
+    
+    # Create a combined lifespan that wraps the FastMCP lifespan
+    @asynccontextmanager
+    async def combined_lifespan(app):
+        """Combined lifespan that initializes FastMCP session manager."""
+        logger.info("Starting lifespan - initializing session manager...")
+        # Use the session_manager.run() directly since that's what FastMCP's lifespan does
+        async with mcp.session_manager.run():
+            logger.info("Session manager initialized successfully")
+            yield
+        logger.info("Session manager shutdown complete")
+    
+    # Create routes for well-known endpoints
+    routes = [
+        # Well-known endpoints for Smithery discovery
+        Route("/.well-known/mcp-config", well_known_mcp_config, methods=["GET"]),
+        Route("/.well-known/mcp/server-card.json", well_known_server_card, methods=["GET"]),
+        Route("/health", health_check, methods=["GET"]),
+        # Mount the FastMCP app (handles /mcp path internally)
+        Mount("/", app=mcp_app),
+    ]
+    
+    app = Starlette(routes=routes, lifespan=combined_lifespan)
     
     # Add CORS middleware for browser-based clients
     # IMPORTANT: CORS must be configured before other middleware
@@ -744,6 +862,9 @@ def create_http_app():
     
     # Apply Smithery config middleware for per-request configuration
     app = SmitheryConfigMiddleware(app)
+    
+    # Apply path rewrite middleware: "/" -> "/mcp"
+    app = RootToMcpMiddleware(app)
     
     return app
 
@@ -762,7 +883,8 @@ def main():
         port = int(os.environ.get("PORT", 8081))
         
         logger.info(f"Listening on port {port}")
-        logger.info(f"MCP endpoint: /mcp (Streamable HTTP)")
+        logger.info(f"MCP endpoint: / -> /mcp (Streamable HTTP with path rewrite)")
+        logger.info(f"Well-known: /.well-known/mcp-config, /.well-known/mcp/server-card.json")
         
         # Run with uvicorn
         uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
