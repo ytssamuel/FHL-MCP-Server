@@ -19,54 +19,50 @@ from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.responses import JSONResponse, Response
 
-# Import all tool functions
+# Import tool functions with aliases to avoid conflict with FastMCP decorated functions
 from fhl_bible_mcp.tools.verse import (
-    get_bible_verse,
-    get_bible_chapter,
-    query_verse_citation,
+    get_bible_verse as get_bible_verse_func,
+    get_bible_chapter as get_bible_chapter_func,
+    query_verse_citation as query_verse_citation_func,
 )
 from fhl_bible_mcp.tools.search import (
-    search_bible,
-    search_bible_advanced,
+    search_bible as search_bible_func,
+    search_bible_advanced as search_bible_advanced_func,
 )
 from fhl_bible_mcp.tools.strongs import (
-    get_word_analysis,
-    lookup_strongs,
-    search_strongs_occurrences,
+    get_word_analysis as get_word_analysis_func,
+    lookup_strongs as lookup_strongs_func,
+    search_strongs_occurrences as search_strongs_occurrences_func,
 )
 from fhl_bible_mcp.tools.commentary import (
-    get_commentary,
-    list_commentaries,
-    search_commentary,
-    get_topic_study,
+    get_commentary as get_commentary_func,
+    list_commentaries as list_commentaries_func,
+    search_commentary as search_commentary_func,
+    get_topic_study as get_topic_study_func,
 )
 from fhl_bible_mcp.tools.info import (
-    list_bible_versions,
-    get_book_list,
-    get_book_info,
-    search_available_versions,
+    list_bible_versions as list_bible_versions_func,
+    search_available_versions as search_available_versions_func,
 )
 from fhl_bible_mcp.tools.audio import (
-    get_audio_bible,
-    list_audio_versions,
-    get_audio_chapter_with_text,
+    list_audio_versions as list_audio_versions_func,
+    get_audio_chapter_with_text as get_audio_chapter_with_text_func,
 )
-from fhl_bible_mcp.tools.apocrypha import (
-    handle_get_apocrypha_verse,
-    handle_search_apocrypha,
-    handle_list_apocrypha_books,
-)
-from fhl_bible_mcp.tools.apostolic_fathers import (
-    handle_get_apostolic_fathers_verse,
-    handle_search_apostolic_fathers,
-    handle_list_apostolic_fathers_books,
-)
-from fhl_bible_mcp.tools.footnotes import (
-    handle_get_bible_footnote,
-)
-from fhl_bible_mcp.tools.articles import (
-    handle_search_articles,
-    handle_list_article_columns,
+
+# Import HTTP-adapted tool wrappers for tools that need signature adaptation
+from fhl_bible_mcp.http_tools import (
+    http_get_book_list,
+    http_get_book_info,
+    http_get_audio_bible,
+    http_get_apocrypha_verse,
+    http_search_apocrypha,
+    http_list_apocrypha_books,
+    http_get_apostolic_fathers_verse,
+    http_search_apostolic_fathers,
+    http_list_apostolic_fathers_books,
+    http_get_bible_footnote,
+    http_search_articles,
+    http_list_article_columns,
 )
 from mcp.server.transport_security import TransportSecuritySettings
 
@@ -213,7 +209,7 @@ def get_config_value(key: str, default=None):
 # ============================================================================
 
 @mcp.tool()
-async def get_bible_verse_tool(
+async def get_bible_verse(
     book: str,
     chapter: int,
     verse: str = None,
@@ -231,7 +227,7 @@ async def get_bible_verse_tool(
         include_strong: 是否包含 Strong's Number（預設：false）
         use_simplified: 是否使用簡體中文（預設：false）
     """
-    result = await get_bible_verse(
+    result = await get_bible_verse_func(
         book=book,
         chapter=chapter,
         verse=verse,
@@ -243,7 +239,7 @@ async def get_bible_verse_tool(
 
 
 @mcp.tool()
-async def get_bible_chapter_tool(
+async def get_bible_chapter(
     book: str,
     chapter: int,
     version: str = "unv",
@@ -257,7 +253,7 @@ async def get_bible_chapter_tool(
         version: 聖經版本代碼（預設：unv）
         use_simplified: 是否使用簡體中文
     """
-    result = await get_bible_chapter(
+    result = await get_bible_chapter_func(
         book=book,
         chapter=chapter,
         version=version,
@@ -267,7 +263,7 @@ async def get_bible_chapter_tool(
 
 
 @mcp.tool()
-async def query_verse_citation_tool(
+async def query_verse_citation(
     citation: str,
     version: str = "unv",
     include_strong: bool = False,
@@ -281,7 +277,7 @@ async def query_verse_citation_tool(
         include_strong: 是否包含 Strong's Number
         use_simplified: 是否使用簡體中文
     """
-    result = await query_verse_citation(
+    result = await query_verse_citation_func(
         citation=citation,
         version=version,
         include_strong=include_strong,
@@ -295,7 +291,7 @@ async def query_verse_citation_tool(
 # ============================================================================
 
 @mcp.tool()
-async def search_bible_tool(
+async def search_bible(
     query: str,
     search_type: str = "keyword",
     scope: str = "all",
@@ -313,7 +309,7 @@ async def search_bible_tool(
         limit: 最多返回筆數
         use_simplified: 是否使用簡體中文
     """
-    result = await search_bible(
+    result = await search_bible_func(
         query=query,
         search_type=search_type,
         scope=scope,
@@ -325,7 +321,7 @@ async def search_bible_tool(
 
 
 @mcp.tool()
-async def search_bible_advanced_tool(
+async def search_bible_advanced(
     query: str,
     search_type: str = "keyword",
     range_start: int = None,
@@ -347,7 +343,7 @@ async def search_bible_advanced_tool(
         offset: 跳過筆數
         use_simplified: 是否使用簡體中文
     """
-    result = await search_bible_advanced(
+    result = await search_bible_advanced_func(
         query=query,
         search_type=search_type,
         range_start=range_start,
@@ -365,7 +361,7 @@ async def search_bible_advanced_tool(
 # ============================================================================
 
 @mcp.tool()
-async def get_word_analysis_tool(
+async def get_word_analysis(
     book: str,
     chapter: int,
     verse: int,
@@ -379,7 +375,7 @@ async def get_word_analysis_tool(
         verse: 節數
         use_simplified: 是否使用簡體中文
     """
-    result = await get_word_analysis(
+    result = await get_word_analysis_func(
         book=book,
         chapter=chapter,
         verse=verse,
@@ -389,7 +385,7 @@ async def get_word_analysis_tool(
 
 
 @mcp.tool()
-async def lookup_strongs_tool(
+async def lookup_strongs(
     number: str,
     testament: str = None,
     use_simplified: bool = False
@@ -401,7 +397,7 @@ async def lookup_strongs_tool(
         testament: 約別（OT=舊約, NT=新約）。當 number 包含 G/H 前綴時可省略。
         use_simplified: 是否使用簡體中文
     """
-    result = await lookup_strongs(
+    result = await lookup_strongs_func(
         number=number,
         testament=testament,
         use_simplified=use_simplified
@@ -410,7 +406,7 @@ async def lookup_strongs_tool(
 
 
 @mcp.tool()
-async def search_strongs_occurrences_tool(
+async def search_strongs_occurrences(
     number: str,
     testament: str = None,
     limit: int = 50,
@@ -424,7 +420,7 @@ async def search_strongs_occurrences_tool(
         limit: 最多返回筆數
         use_simplified: 是否使用簡體中文
     """
-    result = await search_strongs_occurrences(
+    result = await search_strongs_occurrences_func(
         number=number,
         testament=testament,
         limit=limit,
@@ -438,7 +434,7 @@ async def search_strongs_occurrences_tool(
 # ============================================================================
 
 @mcp.tool()
-async def get_commentary_tool(
+async def get_commentary(
     book: str,
     chapter: int,
     verse: int = None,
@@ -452,7 +448,7 @@ async def get_commentary_tool(
         verse: 節數（可選）
         use_simplified: 是否使用簡體中文
     """
-    result = await get_commentary(
+    result = await get_commentary_func(
         book=book,
         chapter=chapter,
         verse=verse,
@@ -462,7 +458,7 @@ async def get_commentary_tool(
 
 
 @mcp.tool()
-async def list_commentaries_tool(
+async def list_commentaries(
     use_simplified: bool = False
 ) -> str:
     """列出所有可用的註釋書。
@@ -470,12 +466,30 @@ async def list_commentaries_tool(
     Args:
         use_simplified: 是否使用簡體中文
     """
-    result = await list_commentaries(use_simplified=use_simplified)
+    result = await list_commentaries_func(use_simplified=use_simplified)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 @mcp.tool()
-async def get_topic_study_tool(
+async def search_commentary(
+    keyword: str,
+    use_simplified: bool = False
+) -> str:
+    """在註釋書中搜尋關鍵字。
+    
+    Args:
+        keyword: 搜尋關鍵字
+        use_simplified: 是否使用簡體中文
+    """
+    result = await search_commentary_func(
+        keyword=keyword,
+        use_simplified=use_simplified
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+async def get_topic_study(
     keyword: str,
     source: str = "all",
     count_only: bool = False,
@@ -489,7 +503,7 @@ async def get_topic_study_tool(
         count_only: 是否只返回總數
         use_simplified: 是否使用簡體中文
     """
-    result = await get_topic_study(
+    result = await get_topic_study_func(
         keyword=keyword,
         source=source,
         count_only=count_only,
@@ -503,7 +517,7 @@ async def get_topic_study_tool(
 # ============================================================================
 
 @mcp.tool()
-async def list_bible_versions_tool(
+async def list_bible_versions(
     use_simplified: bool = False
 ) -> str:
     """列出所有可用的聖經版本。
@@ -511,12 +525,12 @@ async def list_bible_versions_tool(
     Args:
         use_simplified: 是否使用簡體中文
     """
-    result = await list_bible_versions(use_simplified=use_simplified)
+    result = await list_bible_versions_func(use_simplified=use_simplified)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 @mcp.tool()
-async def search_available_versions_tool(
+async def search_available_versions(
     testament: str = None,
     has_strongs: bool = None,
     use_simplified: bool = False
@@ -528,7 +542,7 @@ async def search_available_versions_tool(
         has_strongs: 是否包含 Strong's Number
         use_simplified: 是否使用簡體中文
     """
-    result = await search_available_versions(
+    result = await search_available_versions_func(
         testament=testament,
         has_strongs=has_strongs,
         use_simplified=use_simplified
@@ -537,37 +551,31 @@ async def search_available_versions_tool(
 
 
 @mcp.tool()
-async def get_book_list_tool(
+async def get_book_list(
     testament: str = "all",
-    use_simplified: bool = False
 ) -> str:
     """取得聖經書卷列表。
     
     Args:
         testament: 約別（all/OT/NT）
-        use_simplified: 是否使用簡體中文
     """
-    result = await get_book_list(
+    result = await http_get_book_list(
         testament=testament,
-        use_simplified=use_simplified
     )
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 @mcp.tool()
-async def get_book_info_tool(
+async def get_book_info(
     book: str,
-    use_simplified: bool = False
 ) -> str:
     """取得特定書卷的詳細資訊。
     
     Args:
         book: 書卷名稱
-        use_simplified: 是否使用簡體中文
     """
-    result = await get_book_info(
+    result = await http_get_book_info(
         book=book,
-        use_simplified=use_simplified
     )
     return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -577,30 +585,58 @@ async def get_book_info_tool(
 # ============================================================================
 
 @mcp.tool()
-async def get_audio_bible_tool(
+async def get_audio_bible(
     book: str,
     chapter: int,
-    version: str = None
+    audio_version: str = "unv"
 ) -> str:
     """取得有聲聖經連結。
     
     Args:
         book: 書卷名稱
         chapter: 章數
-        version: 有聲聖經版本代碼
+        audio_version: 有聲聖經版本代碼（預設 unv 和合本）
+            可用版本：unv, taiwanese, hakka, cantonese, tcv, hebrew, greek 等
     """
-    result = await get_audio_bible(
+    result = await http_get_audio_bible(
         book=book,
         chapter=chapter,
-        version=version
+        audio_version=audio_version
     )
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 @mcp.tool()
-async def list_audio_versions_tool() -> str:
+async def get_audio_chapter_with_text(
+    book: str,
+    chapter: int,
+    audio_version: str = "unv",
+    text_version: str = "unv",
+    use_simplified: bool = False
+) -> str:
+    """取得整章有聲聖經連結與經文。
+    
+    Args:
+        book: 書卷名稱
+        chapter: 章數
+        audio_version: 有聲聖經版本代碼（預設 unv 和合本）
+        text_version: 經文版本代碼（預設 unv 和合本）
+        use_simplified: 是否使用簡體中文
+    """
+    result = await get_audio_chapter_with_text_func(
+        book=book,
+        chapter=chapter,
+        audio_version=audio_version,
+        text_version=text_version,
+        use_simplified=use_simplified
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+async def list_audio_versions() -> str:
     """列出所有可用的有聲聖經版本。"""
-    result = await list_audio_versions()
+    result = await list_audio_versions_func()
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
@@ -609,7 +645,7 @@ async def list_audio_versions_tool() -> str:
 # ============================================================================
 
 @mcp.tool()
-async def get_apocrypha_verse_tool(
+async def get_apocrypha_verse(
     book: str,
     chapter: int,
     verse: str = None
@@ -630,7 +666,7 @@ async def get_apocrypha_verse_tool(
               - 混合：'1-2,5,8-10'
               若不提供則返回整章
     """
-    result = await handle_get_apocrypha_verse(
+    result = await http_get_apocrypha_verse(
         book=book,
         chapter=chapter,
         verse=verse
@@ -639,9 +675,30 @@ async def get_apocrypha_verse_tool(
 
 
 @mcp.tool()
-async def list_apocrypha_books_tool() -> str:
+async def search_apocrypha(
+    query: str,
+    limit: int = 10,
+    offset: int = 0
+) -> str:
+    """在次經中搜尋關鍵字。
+    
+    Args:
+        query: 搜尋關鍵字
+        limit: 返回結果數量上限
+        offset: 跳過的結果數量（用於分頁）
+    """
+    result = await http_search_apocrypha(
+        query=query,
+        limit=limit,
+        offset=offset
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+async def list_apocrypha_books() -> str:
     """列出所有可用的次經書卷及其資訊。"""
-    result = await handle_list_apocrypha_books()
+    result = await http_list_apocrypha_books()
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
@@ -650,7 +707,7 @@ async def list_apocrypha_books_tool() -> str:
 # ============================================================================
 
 @mcp.tool()
-async def get_apostolic_fathers_verse_tool(
+async def get_apostolic_fathers_verse(
     book: str,
     chapter: int,
     verse: str = None
@@ -662,7 +719,7 @@ async def get_apostolic_fathers_verse_tool(
         chapter: 章數
         verse: 節數（可選）
     """
-    result = await handle_get_apostolic_fathers_verse(
+    result = await http_get_apostolic_fathers_verse(
         book=book,
         chapter=chapter,
         verse=verse
@@ -671,9 +728,30 @@ async def get_apostolic_fathers_verse_tool(
 
 
 @mcp.tool()
-async def list_apostolic_fathers_books_tool() -> str:
-    """列出所有可用的使徒教父書卷及其資訊"""
-    result = await handle_list_apostolic_fathers_books()
+async def search_apostolic_fathers(
+    query: str,
+    limit: int = 10,
+    offset: int = 0
+) -> str:
+    """在使徒教父文獻中搜尋關鍵字。
+    
+    Args:
+        query: 搜尋關鍵字
+        limit: 返回結果數量上限
+        offset: 跳過的結果數量（用於分頁）
+    """
+    result = await http_search_apostolic_fathers(
+        query=query,
+        limit=limit,
+        offset=offset
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+async def list_apostolic_fathers_books() -> str:
+    """列出所有可用的使徒教父書卷及其資訊。"""
+    result = await http_list_apostolic_fathers_books()
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
@@ -682,7 +760,7 @@ async def list_apostolic_fathers_books_tool() -> str:
 # ============================================================================
 
 @mcp.tool()
-async def get_bible_footnote_tool(
+async def get_bible_footnote(
     book_id: int,
     footnote_id: int,
     use_simplified: bool = False
@@ -697,7 +775,7 @@ async def get_bible_footnote_tool(
         footnote_id: 註腳編號（每個書卷有自己的編號系統）。從 1 開始遞增。若編號不存在，會返回空結果。
         use_simplified: 是否使用簡體中文（預設：否）
     """
-    result = await handle_get_bible_footnote(
+    result = await http_get_bible_footnote(
         book_id=book_id,
         footnote_id=footnote_id,
         use_simplified=use_simplified
@@ -710,7 +788,7 @@ async def get_bible_footnote_tool(
 # ============================================================================
 
 @mcp.tool()
-async def search_fhl_articles_tool(
+async def search_fhl_articles(
     title: str = None,
     author: str = None,
     content: str = None,
@@ -752,7 +830,7 @@ async def search_fhl_articles_tool(
         include_content: 是否包含完整 HTML 內容（預設：false，只返回預覽）。設為 true 會返回完整文章內容，但輸出較大。
         use_simplified: 是否使用簡體中文（預設：false，使用繁體）
     """
-    result = await handle_search_articles(
+    result = await http_search_articles(
         title=title,
         author=author,
         content=content,
@@ -767,7 +845,7 @@ async def search_fhl_articles_tool(
 
 
 @mcp.tool()
-async def list_fhl_article_columns_tool() -> str:
+async def list_fhl_article_columns() -> str:
     """列出信望愛站可用的文章專欄。
 
     回傳所有可搜尋的專欄，包含：
@@ -781,7 +859,7 @@ async def list_fhl_article_columns_tool() -> str:
     - 查看所有專欄：list_fhl_article_columns()
     - 然後使用代碼搜尋：search_fhl_articles(column="women3")
     """
-    result = await handle_list_article_columns()
+    result = await http_list_article_columns()
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
