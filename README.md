@@ -2,6 +2,7 @@
 
 > A Model Context Protocol (MCP) server for accessing the Faith, Hope, Love (信望愛站) Bible API.
 
+[![smithery badge](https://smithery.ai/badge/fhl/fhl-mcp-server)](https://smithery.ai/server/fhl/fhl-mcp-server)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
